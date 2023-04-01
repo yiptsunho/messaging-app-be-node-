@@ -10,7 +10,9 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:3001",
+        // TODO: set origin to FE hosting site only
+        // origin: "http://localhost:3001",
+        origin: "*",
         methods: ["GET", "POST"],
     },
 });
@@ -29,32 +31,22 @@ io.use((socket, next) => {
 
 io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);
-    const users = [];
-    for (let [id, socket] of io.of("/").sockets) {
-        users.push({
-            socketId: id,
-            socket: socket,
-            userId: socket.userId,
-            loginId: socket.loginId,
-        });
-    }
-    console.log(users)
 
     socket.on("send_message", (data) => {
-        console.log(data)
+        console.log("message detail: ", data)
         socket.to(data.room).emit("receive_message", data);
-        // save message in database
+        // TODO: save message in database
     });
 
-    socket.on("join_room", (data) => {
+    socket.on("join_room", async (data) => {
         // data = {
         //     roomId: "",
         //     receiverId: ""
         // }
         console.log("someone joined room " + data.roomId)
-        console.log(users)
-        let userIndex = users.findIndex(user => user.userId == data.receiverId);
-        let targetSocket = users[userIndex].socket;
+        const sockets = await io.fetchSockets();
+        let socketIndex = sockets.findIndex(socket => socket.userId == data.receiverId);
+        let targetSocket = sockets[socketIndex];
         console.log("user " + data.receiverId + " is invited to join room " + data.roomId)
         targetSocket.join(data.roomId)
     });
