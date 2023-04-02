@@ -1,11 +1,11 @@
 {
   "name": "messaging-app-be",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "author": "jacky",
   "license": "MIT",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "nodemon server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
