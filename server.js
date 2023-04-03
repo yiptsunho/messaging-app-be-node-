@@ -17,6 +17,14 @@ const io = new Server(server, {
     },
 });
 
+const joinRoom = ({ targetSocket, data }) => {
+    if (targetSocket) {
+        targetSocket.join(data.roomId)
+    } else {
+        console.log(`User ${data.receiverId} not found`)
+    }
+}
+
 io.use((socket, next) => {
 
     const userId = socket.handshake.auth.userId;
@@ -30,28 +38,47 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
-    console.log(`User connected: ${socket.id}`);
+    console.log(`User connected: User ${socket.loginId} (${socket.userId})`);
 
     socket.on("send_message", (data) => {
-        console.log("message detail: ", data)
+        console.log(data)
         socket.to(data.room).emit("receive_message", data);
         // TODO: save message in services
     });
 
     socket.on("join_room", async (data) => {
-        // data = {
-        //     roomId: "",
-        //     receiverId: ""
-        // }
         console.log("someone joined room " + data.roomId)
-        const sockets = await io.fetchSockets();
-        let socketIndex = sockets.findIndex(socket => socket.userId == data.receiverId);
-        let targetSocket = sockets[socketIndex];
-        console.log("user " + data.receiverId + " is invited to join room " + data.roomId)
-        targetSocket.join(data.roomId)
+        const sockets = await io.fetchSockets()
+        if (data.isGroup) {
+            for (let receiverId of data.receiverId) {
+                let socketIndex = sockets.findIndex(socket => socket.userId == receiverId);
+                let targetSocket = sockets[socketIndex];
+                const groupData = {
+                    roomId: data.roomId,
+                    receiverId: receiverId,
+                    isGroup: data.isGroup
+                }
+                console.log("user " + receiverId + " is invited to join room " + data.roomId)
+                joinRoom({targetSocket: targetSocket, data: groupData})
+            }
+        } else {
+            let socketIndex = sockets.findIndex(socket => socket.userId == data.receiverId);
+            let targetSocket = sockets[socketIndex];
+            console.log("user " + data.receiverId + " is invited to join room " + data.roomId)
+            joinRoom({targetSocket: targetSocket, data: data})
+            // if (targetSocket) {
+            //     targetSocket.join(data.roomId)
+            // } else {
+            //     console.log(`User ${data.receiverId} not found`)
+            // }
+        }
+    });
+
+    socket.on("disconnect", (reason) => {
+        console.log(reason)
     });
 });
 
-server.listen(8081, () => {
+server.listen(8081, '192.168.102.184', () => {
     console.log("SERVER IS RUNNING!!");
 });
