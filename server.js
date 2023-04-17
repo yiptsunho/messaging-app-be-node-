@@ -79,6 +79,6 @@ io.on("connection", (socket) => {
     });
 });
 
-server.listen(8081, '192.168.102.184', () => {
+server.listen(8080, () => {
     console.log("SERVER IS RUNNING!!");
 });
